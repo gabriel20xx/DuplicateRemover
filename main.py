@@ -85,3 +85,13 @@ for (title, year), versions in folders_by_title.items():
 print("Folders to delete:")
 for folder in folders_to_delete:
     print(folder)
+
+# Step 4: Delete duplicates
+for folder in folders_to_delete:
+    for root, dirs, files in os.walk(folder, topdown=False):
+        for file in files:
+            os.remove(os.path.join(root, file))  # Delete each file
+        os.rmdir(root)  # Delete each directory
+    print(f"Deleted folder and its contents: {folder}")
+
+print("Script finished")
