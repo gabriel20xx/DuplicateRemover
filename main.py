@@ -1,12 +1,13 @@
 import os
 import re
+import shutil
 from collections import defaultdict
 
-BASE_DIR = "Z:/Movies/YTS/English"  # <-- Update this path
+BASE_DIR = "/mnt/user/Media/Movies/YTS/German"  # <-- Update this path
 
 # Paths to resolution folders relative to BASE_DIR
 RESOLUTION_FOLDERS = [
-    os.path.join(BASE_DIR, folder)
+    os.path.abspath(os.path.join(BASE_DIR, folder))
     for folder in ["720p", "1080p", "1080p.x265", "2160p"]
 ]
 
@@ -24,6 +25,12 @@ folders_by_title = defaultdict(list)
 for folder in RESOLUTION_FOLDERS:
     for dir_name in os.listdir(folder):  # List directories at the top level
         dir_path = os.path.join(folder, dir_name)
+        if not dir_path.startswith(BASE_DIR):
+            print(f"Skipping folder outside base directory: {dir_path}")
+            continue
+        if os.path.islink(dir_path):
+            print(f"Skipping symbolic link: {dir_path}")
+            continue
         if os.path.isdir(dir_path):
             # Use regex to extract title and year from folder name
             match = re.match(r"^(.*?) \((\d{4})\)", dir_name)
@@ -88,10 +95,13 @@ for folder in folders_to_delete:
 
 # Step 4: Delete duplicates
 for folder in folders_to_delete:
-    for root, dirs, files in os.walk(folder, topdown=False):
-        for file in files:
-            os.remove(os.path.join(root, file))  # Delete each file
-        os.rmdir(root)  # Delete each directory
-    print(f"Deleted folder and its contents: {folder}")
+    if not folder.startswith(BASE_DIR):
+        print(f"Skipping deletion for folder outside base directory: {folder}")
+        continue
+    try:
+        shutil.rmtree(folder)
+        print(f"Deleted folder and its contents: {folder}")
+    except Exception as e:
+        print(f"Failed to delete folder {folder}: {e}")
 
 print("Script finished")
